@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Super Over Cricket</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e6efe8; --card:#ffffff; --ink:#0f2a1f; --muted:#51675b; --line:#c9d8cd;
+  --grass:#1f6b46; --pitch:#d9c48e; --ball:#c8102e; --accent:#1f6b46; --accent-ink:#fff;
+  --four:#1c63d6; --six:#8a3fd1; --out:#c8102e;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#08150f; --card:#10261b; --ink:#e7f3ea; --muted:#8fb09d; --line:#1f3d2d;
+    --grass:#17533a; --pitch:#b59f6a; --accent:#5fd391; --accent-ink:#08150f;
+    --four:#6aa2ff; --six:#c597ff; --out:#ff6b7f; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#08150f; --card:#10261b; --ink:#e7f3ea; --muted:#8fb09d; --line:#1f3d2d;
+  --grass:#17533a; --pitch:#b59f6a; --accent:#5fd391; --accent-ink:#08150f;
+  --four:#6aa2ff; --six:#c597ff; --out:#ff6b7f; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;justify-content:center}
+.phone{width:100%;max-width:430px;min-height:100%;display:flex;flex-direction:column;padding:16px}
+button{font:inherit;cursor:pointer;border:0}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.screen{display:none;flex:1;flex-direction:column}
+.screen.on{display:flex}
+
+/* menu + result */
+.center{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;text-align:center}
+.logo{width:96px;height:96px;margin:0 auto;border-radius:50%;background:var(--grass);display:grid;place-items:center}
+.logo i{width:30px;height:30px;border-radius:50%;background:var(--ball);box-shadow:inset -5px -4px 0 rgba(0,0,0,.18)}
+h1{margin:0;font-size:2rem;font-weight:800;letter-spacing:-.03em}
+h2{margin:0;font-size:1.7rem;font-weight:800}
+p{margin:0;color:var(--muted)}
+.rules{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:left;font-size:.92rem}
+.rules p{color:var(--ink)} .rules p+p{margin-top:6px}
+.big{background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:1.1rem;padding:16px;border-radius:14px;width:100%}
+.big:active{transform:scale(.98)}
+
+/* match */
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.score b{font-size:2.6rem;font-weight:800;line-height:1;letter-spacing:-.03em}
+.score span{font-size:1.2rem;color:var(--muted);font-weight:700;margin-left:4px}
+.need{text-align:right;font-size:.9rem;color:var(--muted)}
+.need b{display:block;color:var(--ink);font-size:1.15rem}
+.over{display:flex;gap:8px;margin:14px 0}
+.chip{flex:1;aspect-ratio:1;max-height:44px;border-radius:50%;border:2px dashed var(--line);display:grid;place-items:center;font-weight:800;font-size:.95rem}
+.chip.f{background:var(--card);border:2px solid var(--line)}
+.chip.c4{background:var(--four);color:#fff;border-color:var(--four)}
+.chip.c6{background:var(--six);color:#fff;border-color:var(--six)}
+.chip.w{background:var(--out);color:#fff;border-color:var(--out)}
+.field{position:relative;flex:1;min-height:240px;border-radius:18px;background:var(--grass);overflow:hidden;display:flex;justify-content:center}
+.strip{position:absolute;top:8%;bottom:8%;width:26%;background:var(--pitch);border-radius:6px}
+.stump{position:absolute;left:50%;width:22px;height:8px;transform:translateX(-50%);border-top:4px solid #fff;border-bottom:0;opacity:.95}
+.stump.t{top:10%} .stump.b{bottom:10%}
+.ball{position:absolute;left:50%;top:14%;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--ball);box-shadow:0 2px 4px rgba(0,0,0,.35);transition:top .45s ease-in}
+.ball.go{top:78%}
+.call{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-weight:800;font-size:1.25rem;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.5);padding:0 12px}
+.tip{position:absolute;top:10px;left:0;right:0;text-align:center;color:#fff;font-weight:700;font-size:.85rem;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.shots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.shot{background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:14px;padding:14px 6px;font-weight:800;display:flex;flex-direction:column;gap:2px;min-height:68px}
+.shot small{font-weight:600;color:var(--muted);font-size:.72rem}
+.shot:active:not(:disabled){transform:scale(.97);border-color:var(--accent)}
+.shot:disabled{opacity:.5}
+.hint{text-align:center;font-size:.8rem;margin-top:10px}
+
+.final{font-size:3rem;font-weight:800;letter-spacing:-.03em;color:var(--ink)}
+.row{display:flex;gap:8px}
+.ghost{background:none;border:1px solid var(--line);color:var(--muted);padding:10px;border-radius:10px;font-weight:700;margin-top:10px}
+@media (min-width:431px){.phone{min-height:min(100%,860px);margin:16px 0;border:1px solid var(--line);border-radius:28px;background:var(--bg)}}
+@media (prefers-reduced-motion:reduce){.ball{transition:none}}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <section class="screen on" id="menu">
+    <div class="center">
+      <div class="logo"><i></i></div>
+      <h1>Super Over</h1>
+      <p>Chase the target in one over.</p>
+      <div class="rules">
+        <p><b>Defend</b> is safe, but scores little.</p>
+        <p><b>Drive</b> balances runs and risk.</p>
+        <p><b>Slog</b> can score 6, but a wicket is likely.</p>
+        <p>You have 6 balls and 2 wickets.</p>
+      </div>
+      <button class="big" id="start">Start match</button>
+      <button class="ghost" id="theme" type="button">Switch theme</button>
+    </div>
+  </section>
+
+  <section class="screen" id="match">
+    <div class="top">
+      <div class="score"><b id="runs">0</b><span id="wkts">/0</span></div>
+      <div class="need"><span>Target</span><b id="target">0</b><span id="needTxt"></span></div>
+    </div>
+    <div class="over" id="over" aria-label="This over"></div>
+    <div class="field" id="field">
+      <div class="strip"></div>
+      <div class="stump t"></div><div class="stump b"></div>
+      <div class="tip" id="tip">Bowler runs in…</div>
+      <div class="ball" id="ball"></div>
+      <div class="call" id="call"></div>
+    </div>
+    <div class="shots">
+      <button class="shot" data-s="defend">Defend<small>Safe</small></button>
+      <button class="shot" data-s="drive">Drive<small>Balanced</small></button>
+      <button class="shot" data-s="slog">Slog<small>Big risk</small></button>
+    </div>
+    <p class="hint" id="hint">Pick a shot for each delivery.</p>
+  </section>
+
+  <section class="screen" id="result">
+    <div class="center">
+      <h2 id="verdict"></h2>
+      <div class="final" id="finalScore"></div>
+      <p id="finalNote"></p>
+      <button class="big" id="again">Play again</button>
+    </div>
+  </section>
+
+</div>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var runs,wkts,balls,target,busy,log;
+  var TABLE={ // outcome weights: runs 0,1,2,4,6 and W (out)
+    defend:{0:38,1:44,2:10,4:3,6:0,W:5},
+    drive:{0:20,1:25,2:18,4:20,6:5,W:12},
+    slog:{0:20,1:5,2:5,4:20,6:20,W:30}
+  };
+  var DELIVERIES=["Fast ball","Spinner","Bouncer","Yorker","Slower ball"];
+  function show(id){document.querySelectorAll(".screen").forEach(function(s){s.classList.toggle("on",s.id===id)})}
+  function pick(w){
+    var t=0,k;for(k in w)t+=w[k];var r=Math.random()*t;
+    for(k in w){r-=w[k];if(r<0)return k}return "0";
+  }
+  function start(){
+    runs=0;wkts=0;balls=0;busy=false;log=[];
+    target=14+Math.floor(Math.random()*9);
+    $("call").textContent="";$("ball").className="ball";
+    show("match");nextBall();draw();
+  }
+  function nextBall(){
+    $("tip").textContent=DELIVERIES[Math.floor(Math.random()*DELIVERIES.length)]+" coming…";
+    setBtns(false);busy=false;
+  }
+  function setBtns(off){document.querySelectorAll(".shot").forEach(function(b){b.disabled=off})}
+  function draw(){
+    $("runs").textContent=runs;$("wkts").textContent="/"+wkts;$("target").textContent=target;
+    var left=6-balls;
+    $("needTxt").textContent=Math.max(target-runs,0)+" needed, "+left+" "+(left===1?"ball":"balls");
+    var o=$("over");o.innerHTML="";
+    for(var i=0;i<6;i++){
+      var c=document.createElement("div"),v=log[i];c.className="chip";
+      if(v!==undefined){c.className+=" "+(v==="W"?"w":v==="4"?"c4":v==="6"?"c6":"f");c.textContent=v}
+      o.appendChild(c);
+    }
+  }
+  function play(shot){
+    if(busy)return;busy=true;setBtns(true);
+    var out=pick(TABLE[shot]),ball=$("ball");
+    $("call").textContent="";
+    ball.className="ball go";
+    setTimeout(function(){
+      balls++;log.push(out);
+      var msg;
+      if(out==="W"){wkts++;msg="Wicket! Bowled him."}
+      else{runs+=+out;msg=out==="0"?"Dot ball.":out==="4"?"FOUR! Cracked through cover.":out==="6"?"SIX! Over the rope.":out+(out==="1"?" run.":" runs.")}
+      $("call").textContent=msg;draw();
+      setTimeout(function(){
+        ball.className="ball";
+        if(runs>=target||wkts>=2||balls>=6){finish();return}
+        $("call").textContent="";nextBall();
+      },900);
+    },480);
+  }
+  function finish(){
+    var won=runs>=target;
+    $("verdict").textContent=won?"You won!":"You lost";
+    $("finalScore").textContent=runs+"/"+wkts;
+    $("finalNote").textContent=won?"Target of "+target+" chased in "+balls+(balls===1?" ball.":" balls."):"You were "+(target-runs)+" short of "+target+".";
+    show("result");
+  }
+  $("start").onclick=start;$("again").onclick=start;
+  document.querySelectorAll(".shot").forEach(function(b){b.onclick=function(){play(b.dataset.s)}});
+  $("theme").onclick=function(){
+    var r=document.documentElement,d=r.dataset.theme?r.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+    r.dataset.theme=d?"light":"dark";
+  };
+})();
+</script>
+</body>
+</html>
