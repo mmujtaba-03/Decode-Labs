@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Movie Recommender</title>
+<style>
+:root{color-scheme:dark;--bg:#0d1117;--card:#161b24;--line:#262d3a;--tx:#e8ecf2;--mut:#8b95a7;--ac:#7cc4e8;--ac2:#f0a46a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.5}
+main{max-width:820px;margin:0 auto;padding:28px 18px 60px}
+h1{font-family:Georgia,serif;font-weight:600;font-size:2rem;margin:0 0 4px}
+p.sub{color:var(--mut);margin:0 0 24px}
+h2{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ac);margin:26px 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--tx);padding:7px 14px;border-radius:999px;cursor:pointer;font-size:.9rem}
+.chip.on{background:var(--ac);color:#0d1117;border-color:var(--ac)}
+.grid{display:grid;gap:12px}
+.rec{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.title{font-family:Georgia,serif;font-size:1.15rem}
+.pct{color:var(--ac2);font-weight:700}
+.bar{height:5px;background:var(--line);border-radius:3px;margin:8px 0}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:3px}
+.why{color:var(--mut);font-size:.85rem}
+.tag{display:inline-block;background:#1f2633;border-radius:6px;padding:1px 8px;margin:2px 4px 2px 0;font-size:.78rem;color:var(--ac)}
+button.like{background:none;border:1px solid var(--line);color:var(--tx);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:.8rem}
+button.like.on{border-color:var(--ac2);color:var(--ac2)}
+.empty{color:var(--mut);padding:20px;border:1px dashed var(--line);border-radius:12px;text-align:center}
+.note{margin-top:30px;font-size:.82rem;color:var(--mut);border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>Movie Recommender</h1>
+<p class="sub">Pick your interests, then mark movies you already like. Recommendations update instantly.</p>
+
+<h2>1. Your interests</h2>
+<div class="chips" id="interests"></div>
+
+<h2>2. Movies you like (optional)</h2>
+<div class="chips" id="liked"></div>
+
+<h2>3. Recommended for you</h2>
+<div class="grid" id="out"></div>
+
+<div class="note"><b>How it works:</b> every movie is a binary vector of tags. Your profile is a weighted vector (interests = 1.0, tags from liked movies = 0.6). Movies are ranked by <b>cosine similarity</b> between your profile and the movie vector: dot(u, m) / (|u| × |m|). Movies you liked are excluded.</div>
+</main>
+<script>
+const items=[
+{t:"Inception",y:2010,tags:["sci-fi","thriller","action","mind-bending"]},
+{t:"Interstellar",y:2014,tags:["sci-fi","drama","adventure","mind-bending"]},
+{t:"The Dark Knight",y:2008,tags:["action","crime","thriller","dark"]},
+{t:"Spirited Away",y:2001,tags:["animation","fantasy","adventure","family"]},
+{t:"Parasite",y:2019,tags:["thriller","drama","comedy","dark"]},
+{t:"The Grand Budapest Hotel",y:2014,tags:["comedy","crime","adventure","feel-good"]},
+{t:"Knives Out",y:2019,tags:["mystery","comedy","crime"]},
+{t:"Whiplash",y:2014,tags:["drama","dark","music"]},
+{t:"Coco",y:2017,tags:["animation","family","music","feel-good","fantasy"]},
+{t:"Mad Max: Fury Road",y:2015,tags:["action","adventure","sci-fi"]},
+{t:"Arrival",y:2016,tags:["sci-fi","drama","mystery","mind-bending"]},
+{t:"La La Land",y:2016,tags:["romance","music","drama","feel-good"]},
+{t:"Se7en",y:1995,tags:["crime","mystery","thriller","dark"]},
+{t:"The Princess Bride",y:1987,tags:["fantasy","adventure","romance","comedy","family"]},
+{t:"Shutter Island",y:2010,tags:["mystery","thriller","mind-bending","dark"]},
+{t:"Paddington 2",y:2017,tags:["family","comedy","feel-good","adventure"]},
+{t:"Blade Runner 2049",y:2017,tags:["sci-fi","mystery","dark","drama"]},
+{t:"Dune",y:2021,tags:["sci-fi","adventure","action","drama"]}
+];
+const tags=[...new Set(items.flatMap(i=>i.tags))].sort();
+const selTags=new Set(), likes=new Set();
+
+function chips(el,list,set,label){
+  el.innerHTML="";
+  list.forEach(v=>{
+    const b=document.createElement("button");
+    b.className="chip"+(set.has(v)?" on":"");
+    b.textContent=label?label(v):v;
+    b.onclick=()=>{set.has(v)?set.delete(v):set.add(v);render()};
+    el.appendChild(b);
+  });
+}
+
+function recommend(){
+  const u={};
+  selTags.forEach(t=>u[t]=(u[t]||0)+1);
+  likes.forEach(n=>items[n].tags.forEach(t=>u[t]=(u[t]||0)+0.6));
+  const un=Math.sqrt(Object.values(u).reduce((s,x)=>s+x*x,0));
+  if(!un) return [];
+  return items.map((it,n)=>{
+    if(likes.has(n)) return null;
+    const shared=it.tags.filter(t=>u[t]);
+    const dot=shared.reduce((s,t)=>s+u[t],0);
+    const score=dot/(un*Math.sqrt(it.tags.length));
+    return {it,score,shared};
+  }).filter(r=>r&&r.score>0).sort((a,b)=>b.score-a.score).slice(0,6);
+}
+
+function render(){
+  chips(document.getElementById("interests"),tags,selTags);
+  chips(document.getElementById("liked"),items.map((_,n)=>n),likes,n=>items[n].t);
+  const out=document.getElementById("out");
+  const recs=recommend();
+  if(!recs.length){out.innerHTML='<div class="empty">Select at least one interest to see recommendations.</div>';return}
+  out.innerHTML=recs.map(r=>`<div class="rec"><div class="row"><span class="title">${r.it.t} <span class="why">(${r.it.y})</span></span><span class="pct">${Math.round(r.score*100)}% match</span></div><div class="bar"><i style="width:${Math.round(r.score*100)}%"></i></div><div>${r.it.tags.map(t=>`<span class="tag" style="${r.shared.includes(t)?'':'color:#8b95a7'}">${t}</span>`).join("")}</div><div class="why">Matched on: ${r.shared.join(", ")}</div></div>`).join("");
+}
+render();
+</script>
+</body>
+</html>
